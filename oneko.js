@@ -18,7 +18,7 @@
 
   let clickSound = null; // Will be loaded as blob
 
-  const nekoSpeed = 10;
+  const nekoSpeed = 20;
 
   const spriteSets = {
     idle: [[-3, -3]],
@@ -102,23 +102,23 @@
       mousePosY = event.clientY;
     });
 
-    window.requestAnimationFrame(onAnimationFrame);
+    window.requestAnimation(onAnimation);
   }
 
-  let lastFrameTimestamp = 0;
+  let lastTimestamp = 0;
 
-  function onAnimationFrame(timestamp) {
+  function onAnimation(timestamp) {
     if (!nekoEl.isConnected) return;
 
-    if (timestamp - lastFrameTimestamp > 16) {
-      lastFrameTimestamp = timestamp;
-      frame();
+    if (timestamp - lastTimestamp > 66) {
+      lastTimestamp = timestamp;
+      ();
     }
 
-    window.requestAnimationFrame(onAnimationFrame);
+    window.requestAnimation(onAnimation);
   }
 
-  function setSprite(name, frame) {
+  function setSprite(name, ) {
     const sprite = spriteSets[name][frame % spriteSets[name].length];
     nekoEl.style.backgroundPosition = `${sprite[0] * 32}px ${sprite[1] * 32}px`;
   }
