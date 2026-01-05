@@ -1,11 +1,7 @@
+// oneko.js — Vencord-ready fixed version with working click sound
 (function oneko() {
-  console.log("[oneko] Script started");
-
   // Prevent multiple instances
-  if (document.getElementById("oneko")) {
-    console.log("[oneko] Already running, aborting");
-    return;
-  }
+  if (document.getElementById("oneko")) return;
 
   const nekoEl = document.createElement("div");
 
@@ -20,19 +16,7 @@
   let idleAnimation = null;
   let idleAnimationFrame = 0;
 
-  // Sound setup
-  const clickSound = new Audio(
-    "https://cdn.jsdelivr.net/gh/Smuray255/onefufu@main/meow.mp3"
-  );
-  clickSound.volume = 0.4;
-  clickSound.preload = "auto";
-
-  clickSound.addEventListener("canplaythrough", () => {
-    console.log("[oneko] Click sound loaded successfully");
-  });
-  clickSound.addEventListener("error", (e) => {
-    console.error("[oneko] Error loading sound", e);
-  });
+  let clickSound = null; // Will be loaded as blob
 
   const nekoSpeed = 10;
 
@@ -57,13 +41,13 @@
   };
 
   function init() {
-    console.log("[oneko] init called");
+    console.log("[oneko] Initializing");
 
     // Reduced motion check
     const isReducedMotion =
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (isReducedMotion) {
-      console.log("[oneko] Reduced motion is on, aborting");
+      console.log("[oneko] Reduced motion is enabled, stopping");
       return;
     }
 
@@ -79,36 +63,43 @@
     nekoEl.style.top = `${nekoPosY - 16}px`;
     nekoEl.style.zIndex = 2147483647;
 
+    // Load click sound as blob
+    fetch("https://cdn.jsdelivr.net/gh/Smuray255/onefufu@main/meow.mp3")
+      .then(r => r.blob())
+      .then(blob => {
+        clickSound = new Audio(URL.createObjectURL(blob));
+        clickSound.volume = 0.4;
+        clickSound.preload = "auto";
+        console.log("[oneko] Click sound loaded");
+      })
+      .catch(e => console.error("[oneko] Error loading click sound", e));
+
     // Click sound + reset idle on click
     nekoEl.addEventListener("click", () => {
       console.log("[oneko] Cat clicked");
-      try {
+      if (clickSound) {
         clickSound.currentTime = 0;
-        clickSound.play().then(() => {
-          console.log("[oneko] Click sound played");
-        }).catch((err) => {
-          console.error("[oneko] Error playing sound", err);
-        });
-      } catch (err) {
-        console.error("[oneko] Exception playing sound", err);
+        clickSound.play().catch(e =>
+          console.error("[oneko] Error playing sound", e)
+        );
+      } else {
+        console.warn("[oneko] Click sound not ready yet");
       }
       idleAnimation = "alert";
       idleAnimationFrame = 0;
       idleTime = 0;
     });
 
-    // Cat sprite (GIF) URL from GitHub
+    // Cat sprite (GIF) URL
     const nekoFile =
       "https://raw.githubusercontent.com/adryd325/oneko.js/14bab15a755d0e35cd4ae19c931d96d306f99f42/oneko.gif";
     nekoEl.style.backgroundImage = `url(${nekoFile})`;
 
     document.body.appendChild(nekoEl);
-    console.log("[oneko] Cat added to DOM");
 
-    document.addEventListener("mousemove", (event) => {
+    document.addEventListener("mousemove", event => {
       mousePosX = event.clientX;
       mousePosY = event.clientY;
-      // console.log("[oneko] Mouse moved", mousePosX, mousePosY);
     });
 
     window.requestAnimationFrame(onAnimationFrame);
@@ -140,14 +131,23 @@
   function idle() {
     idleTime += 1;
 
-    if (idleTime > 10 && Math.floor(Math.random() * 200) === 0 && idleAnimation === null) {
+    if (
+      idleTime > 10 &&
+      Math.floor(Math.random() * 200) === 0 &&
+      idleAnimation === null
+    ) {
       const avalibleIdleAnimations = ["sleeping", "scratchSelf"];
       if (nekoPosX < 32) avalibleIdleAnimations.push("scratchWallW");
       if (nekoPosY < 32) avalibleIdleAnimations.push("scratchWallN");
-      if (nekoPosX > window.innerWidth - 32) avalibleIdleAnimations.push("scratchWallE");
-      if (nekoPosY > window.innerHeight - 32) avalibleIdleAnimations.push("scratchWallS");
+      if (nekoPosX > window.innerWidth - 32)
+        avalibleIdleAnimations.push("scratchWallE");
+      if (nekoPosY > window.innerHeight - 32)
+        avalibleIdleAnimations.push("scratchWallS");
 
-      idleAnimation = avalibleIdleAnimations[Math.floor(Math.random() * avalibleIdleAnimations.length)];
+      idleAnimation =
+        avalibleIdleAnimations[
+          Math.floor(Math.random() * avalibleIdleAnimations.length)
+        ];
       console.log("[oneko] Idle animation chosen:", idleAnimation);
     }
 
