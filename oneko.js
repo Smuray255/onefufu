@@ -18,7 +18,7 @@
 
   let clickSound = null; // Will be loaded as blob
 
-  const nekoSpeed = 10;
+  const nekoSpeed = 5;
 
   const spriteSets = {
     idle: [[-3, -3]],
