@@ -1,4 +1,4 @@
-// oneko.js — Vencord-ready fixed version with frameSize control
+// oneko.js — Vencord-ready scaled version
 (function oneko() {
   // Prevent multiple instances
   if (document.getElementById("oneko")) return;
@@ -16,11 +16,11 @@
   let idleAnimation = null;
   let idleAnimationFrame = 0;
 
-  let clickSound = null; // Will be loaded as blob
+  let clickSound = null;
 
   const nekoSpeed = 10;
-  const frameSize = 128; // <- NEW: set this to your frame width/height
 
+  // Original sprite frames
   const spriteSets = {
     idle: [[-3, -3]],
     alert: [[-7, -3]],
@@ -41,6 +41,10 @@
     NW: [[-1, 0], [-1, -1]],
   };
 
+  // Scale factor for your upscaled sprite (1024x512 vs original 256x128)
+  const scale = 4; // 1024/256 = 4, 512/128 = 4
+  const frameSize = 32 * scale; // each frame is 32x32 in original units
+
   function init() {
     // Reduced motion check
     const isReducedMotion =
@@ -59,7 +63,7 @@
     nekoEl.style.top = `${nekoPosY - frameSize / 2}px`;
     nekoEl.style.zIndex = 2147483647;
 
-    // Load click sound as blob
+    // Load click sound
     fetch("https://cdn.jsdelivr.net/gh/Smuray255/onefufu@main/meow.mp3")
       .then(r => r.blob())
       .then(blob => {
@@ -67,22 +71,22 @@
         clickSound.volume = 0.4;
         clickSound.preload = "auto";
       })
-      .catch(console.error);
+      .catch(() => {});
 
-    // Click sound + reset idle on click
+    // Click sound + reset idle
     nekoEl.addEventListener("click", () => {
       if (clickSound) {
         clickSound.currentTime = 0;
-        clickSound.play().catch(console.error);
+        clickSound.play().catch(() => {});
       }
       idleAnimation = "alert";
       idleAnimationFrame = 0;
       idleTime = 0;
     });
 
-    // Cat sprite (GIF) URL
+    // Cat sprite GIF (original link)
     const nekoFile =
-      "https://raw.githubusercontent.com/Smuray255/onefufu/refs/heads/main/oneko.gif";
+      "https://raw.githubusercontent.com/adryd325/oneko.js/14bab15a755d0e35cd4ae19c931d96d306f99f42/oneko.gif";
     nekoEl.style.backgroundImage = `url(${nekoFile})`;
 
     document.body.appendChild(nekoEl);
@@ -96,11 +100,14 @@
   }
 
   let lastFrameTimestamp = 0;
+  const frameInterval = 1000 / 15; // ~15 FPS original timing
 
   function onAnimationFrame(timestamp) {
     if (!nekoEl.isConnected) return;
 
-    if (timestamp - lastFrameTimestamp > 16) {
+    if (!lastFrameTimestamp) lastFrameTimestamp = timestamp;
+
+    if (timestamp - lastFrameTimestamp >= frameInterval) {
       lastFrameTimestamp = timestamp;
       frame();
     }
@@ -126,18 +133,12 @@
       Math.floor(Math.random() * 200) === 0 &&
       idleAnimation === null
     ) {
-      const avalibleIdleAnimations = ["sleeping", "scratchSelf"];
-      if (nekoPosX < frameSize) avalibleIdleAnimations.push("scratchWallW");
-      if (nekoPosY < frameSize) avalibleIdleAnimations.push("scratchWallN");
-      if (nekoPosX > window.innerWidth - frameSize)
-        avalibleIdleAnimations.push("scratchWallE");
-      if (nekoPosY > window.innerHeight - frameSize)
-        avalibleIdleAnimations.push("scratchWallS");
-
-      idleAnimation =
-        avalibleIdleAnimations[
-          Math.floor(Math.random() * avalibleIdleAnimations.length)
-        ];
+      const availableIdle = ["sleeping", "scratchSelf"];
+      if (nekoPosX < frameSize) availableIdle.push("scratchWallW");
+      if (nekoPosY < frameSize) availableIdle.push("scratchWallN");
+      if (nekoPosX > window.innerWidth - frameSize) availableIdle.push("scratchWallE");
+      if (nekoPosY > window.innerHeight - frameSize) availableIdle.push("scratchWallS");
+      idleAnimation = availableIdle[Math.floor(Math.random() * availableIdle.length)];
     }
 
     switch (idleAnimation) {
@@ -146,7 +147,6 @@
         else setSprite("sleeping", Math.floor(idleAnimationFrame / 4));
         if (idleAnimationFrame > 192) resetIdleAnimation();
         break;
-
       case "scratchWallN":
       case "scratchWallS":
       case "scratchWallE":
@@ -155,7 +155,6 @@
         setSprite(idleAnimation, idleAnimationFrame);
         if (idleAnimationFrame > 9) resetIdleAnimation();
         break;
-
       default:
         setSprite("idle", 0);
         return;
@@ -169,7 +168,7 @@
     const diffY = nekoPosY - mousePosY;
     const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
 
-    if (distance < nekoSpeed || distance < frameSize / 2) {
+    if (distance < nekoSpeed || distance < 48) {
       idle();
       return;
     }
