@@ -18,7 +18,7 @@
 
   // Sound setup
   const clickSound = new Audio(
-    "https://raw.githubusercontent.com/Smuray255/onefufu/main/meow.mp3"
+    "https://cdn.jsdelivr.net/gh/Smuray255/onefufu@main/meow.mp3"
   );
   clickSound.volume = 0.4;
   clickSound.preload = "auto";
