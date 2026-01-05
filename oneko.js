@@ -1,11 +1,7 @@
-// oneko.js: https://github.com/adryd325/oneko.js
-
+// oneko.js — Vencord-ready fixed version
 (function oneko() {
-  const isReducedMotion =
-    window.matchMedia(`(prefers-reduced-motion: reduce)`) === true ||
-    window.matchMedia(`(prefers-reduced-motion: reduce)`).matches === true;
-
-  if (isReducedMotion) return;
+  // Prevent multiple instances
+  if (document.getElementById("oneko")) return;
 
   const nekoEl = document.createElement("div");
 
@@ -19,80 +15,43 @@
   let idleTime = 0;
   let idleAnimation = null;
   let idleAnimationFrame = 0;
+
+  // Sound setup
   const clickSound = new Audio(
     "https://raw.githubusercontent.com/Smuray255/onefufu/main/meow.mp3"
   );
   clickSound.volume = 0.4;
   clickSound.preload = "auto";
-  idleAnimation = "alert";
-  idleAnimationFrame = 0;
-  idleTime = 0;
 
   const nekoSpeed = 10;
+
   const spriteSets = {
     idle: [[-3, -3]],
     alert: [[-7, -3]],
-    scratchSelf: [
-      [-5, 0],
-      [-6, 0],
-      [-7, 0],
-    ],
-    scratchWallN: [
-      [0, 0],
-      [0, -1],
-    ],
-    scratchWallS: [
-      [-7, -1],
-      [-6, -2],
-    ],
-    scratchWallE: [
-      [-2, -2],
-      [-2, -3],
-    ],
-    scratchWallW: [
-      [-4, 0],
-      [-4, -1],
-    ],
+    scratchSelf: [[-5, 0], [-6, 0], [-7, 0]],
+    scratchWallN: [[0, 0], [0, -1]],
+    scratchWallS: [[-7, -1], [-6, -2]],
+    scratchWallE: [[-2, -2], [-2, -3]],
+    scratchWallW: [[-4, 0], [-4, -1]],
     tired: [[-3, -2]],
-    sleeping: [
-      [-2, 0],
-      [-2, -1],
-    ],
-    N: [
-      [-1, -2],
-      [-1, -3],
-    ],
-    NE: [
-      [0, -2],
-      [0, -3],
-    ],
-    E: [
-      [-3, 0],
-      [-3, -1],
-    ],
-    SE: [
-      [-5, -1],
-      [-5, -2],
-    ],
-    S: [
-      [-6, -3],
-      [-7, -2],
-    ],
-    SW: [
-      [-5, -3],
-      [-6, -1],
-    ],
-    W: [
-      [-4, -2],
-      [-4, -3],
-    ],
-    NW: [
-      [-1, 0],
-      [-1, -1],
-    ],
+    sleeping: [[-2, 0], [-2, -1]],
+    N: [[-1, -2], [-1, -3]],
+    NE: [[0, -2], [0, -3]],
+    E: [[-3, 0], [-3, -1]],
+    SE: [[-5, -1], [-5, -2]],
+    S: [[-6, -3], [-7, -2]],
+    SW: [[-5, -3], [-6, -1]],
+    W: [[-4, -2], [-4, -3]],
+    NW: [[-1, 0], [-1, -1]],
   };
 
   function init() {
+    // Reduced motion check
+    const isReducedMotion =
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (isReducedMotion) return;
+
+    // Cat div setup
     nekoEl.id = "oneko";
     nekoEl.ariaHidden = true;
     nekoEl.style.width = "2048px";
@@ -103,6 +62,8 @@
     nekoEl.style.left = `${nekoPosX - 16}px`;
     nekoEl.style.top = `${nekoPosY - 16}px`;
     nekoEl.style.zIndex = 2147483647;
+
+    // Click sound + reset idle on click
     nekoEl.addEventListener("click", () => {
       clickSound.currentTime = 0;
       clickSound.play().catch(() => {});
@@ -110,18 +71,15 @@
       idleAnimationFrame = 0;
       idleTime = 0;
     });
-    
-    
-    let nekoFile = "./oneko.gif"
-    const curScript = document.currentScript
-    if (curScript && curScript.dataset.cat) {
-      nekoFile = curScript.dataset.cat
-    }
+
+    // Cat sprite (GIF) URL from GitHub
+    const nekoFile =
+      "https://raw.githubusercontent.com/adryd325/oneko.js/14bab15a755d0e35cd4ae19c931d96d306f99f42/oneko.gif";
     nekoEl.style.backgroundImage = `url(${nekoFile})`;
 
     document.body.appendChild(nekoEl);
 
-    document.addEventListener("mousemove", function (event) {
+    document.addEventListener("mousemove", (event) => {
       mousePosX = event.clientX;
       mousePosY = event.clientY;
     });
@@ -129,20 +87,16 @@
     window.requestAnimationFrame(onAnimationFrame);
   }
 
-  let lastFrameTimestamp;
+  let lastFrameTimestamp = 0;
 
   function onAnimationFrame(timestamp) {
-    // Stops execution if the neko element is removed from DOM
-    if (!nekoEl.isConnected) {
-      return;
-    }
-    if (!lastFrameTimestamp) {
+    if (!nekoEl.isConnected) return;
+
+    if (timestamp - lastFrameTimestamp > 16) {
       lastFrameTimestamp = timestamp;
+      frame();
     }
-    if (timestamp - lastFrameTimestamp > 100) {
-      lastFrameTimestamp = timestamp
-      frame()
-    }
+
     window.requestAnimationFrame(onAnimationFrame);
   }
 
@@ -159,25 +113,18 @@
   function idle() {
     idleTime += 1;
 
-    // every ~ 20 seconds
+    // Occasionally do idle animations
     if (
       idleTime > 10 &&
-      Math.floor(Math.random() * 200) == 0 &&
-      idleAnimation == null
+      Math.floor(Math.random() * 200) === 0 &&
+      idleAnimation === null
     ) {
-      let avalibleIdleAnimations = ["sleeping", "scratchSelf"];
-      if (nekoPosX < 32) {
-        avalibleIdleAnimations.push("scratchWallW");
-      }
-      if (nekoPosY < 32) {
-        avalibleIdleAnimations.push("scratchWallN");
-      }
-      if (nekoPosX > window.innerWidth - 32) {
-        avalibleIdleAnimations.push("scratchWallE");
-      }
-      if (nekoPosY > window.innerHeight - 32) {
-        avalibleIdleAnimations.push("scratchWallS");
-      }
+      const avalibleIdleAnimations = ["sleeping", "scratchSelf"];
+      if (nekoPosX < 32) avalibleIdleAnimations.push("scratchWallW");
+      if (nekoPosY < 32) avalibleIdleAnimations.push("scratchWallN");
+      if (nekoPosX > window.innerWidth - 32) avalibleIdleAnimations.push("scratchWallE");
+      if (nekoPosY > window.innerHeight - 32) avalibleIdleAnimations.push("scratchWallS");
+
       idleAnimation =
         avalibleIdleAnimations[
           Math.floor(Math.random() * avalibleIdleAnimations.length)
@@ -186,25 +133,20 @@
 
     switch (idleAnimation) {
       case "sleeping":
-        if (idleAnimationFrame < 8) {
-          setSprite("tired", 0);
-          break;
-        }
-        setSprite("sleeping", Math.floor(idleAnimationFrame / 4));
-        if (idleAnimationFrame > 192) {
-          resetIdleAnimation();
-        }
+        if (idleAnimationFrame < 8) setSprite("tired", 0);
+        else setSprite("sleeping", Math.floor(idleAnimationFrame / 4));
+        if (idleAnimationFrame > 192) resetIdleAnimation();
         break;
+
       case "scratchWallN":
       case "scratchWallS":
       case "scratchWallE":
       case "scratchWallW":
       case "scratchSelf":
         setSprite(idleAnimation, idleAnimationFrame);
-        if (idleAnimationFrame > 9) {
-          resetIdleAnimation();
-        }
+        if (idleAnimationFrame > 9) resetIdleAnimation();
         break;
+
       default:
         setSprite("idle", 0);
         return;
@@ -228,14 +170,13 @@
 
     if (idleTime > 1) {
       setSprite("alert", 0);
-      // count down after being alerted before moving
       idleTime = Math.min(idleTime, 7);
       idleTime -= 1;
       return;
     }
 
-    let direction;
-    direction = diffY / distance > 0.5 ? "N" : "";
+    let direction = "";
+    direction += diffY / distance > 0.5 ? "N" : "";
     direction += diffY / distance < -0.5 ? "S" : "";
     direction += diffX / distance > 0.5 ? "W" : "";
     direction += diffX / distance < -0.5 ? "E" : "";
