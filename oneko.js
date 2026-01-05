@@ -1,4 +1,4 @@
-// oneko.js — Vencord-ready scaled version
+// oneko.js — Vencord-ready fixed version with working click sound
 (function oneko() {
   // Prevent multiple instances
   if (document.getElementById("oneko")) return;
@@ -16,11 +16,10 @@
   let idleAnimation = null;
   let idleAnimationFrame = 0;
 
-  let clickSound = null;
+  let clickSound = null; // Will be loaded as blob
 
   const nekoSpeed = 10;
 
-  // Original sprite frames
   const spriteSets = {
     idle: [[-3, -3]],
     alert: [[-7, -3]],
@@ -41,50 +40,57 @@
     NW: [[-1, 0], [-1, -1]],
   };
 
-  // Scale factor for your upscaled sprite (1024x512 vs original 256x128)
-  const scale = 4; // 1024/256 = 4, 512/128 = 4
-  const frameSize = 32 * scale; // each frame is 32x32 in original units
-
   function init() {
+    console.log("[oneko] Initializing");
+
     // Reduced motion check
     const isReducedMotion =
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (isReducedMotion) return;
+    if (isReducedMotion) {
+      console.log("[oneko] Reduced motion is enabled, stopping");
+      return;
+    }
 
     // Cat div setup
     nekoEl.id = "oneko";
     nekoEl.ariaHidden = true;
-    nekoEl.style.width = `${frameSize}px`;
-    nekoEl.style.height = `${frameSize}px`;
+    nekoEl.style.width = "32px";
+    nekoEl.style.height = "32px";
     nekoEl.style.position = "fixed";
     nekoEl.style.pointerEvents = "auto";
     nekoEl.style.imageRendering = "pixelated";
-    nekoEl.style.left = `${nekoPosX - frameSize / 2}px`;
-    nekoEl.style.top = `${nekoPosY - frameSize / 2}px`;
+    nekoEl.style.left = `${nekoPosX - 16}px`;
+    nekoEl.style.top = `${nekoPosY - 16}px`;
     nekoEl.style.zIndex = 2147483647;
 
-    // Load click sound
+    // Load click sound as blob
     fetch("https://cdn.jsdelivr.net/gh/Smuray255/onefufu@main/meow.mp3")
       .then(r => r.blob())
       .then(blob => {
         clickSound = new Audio(URL.createObjectURL(blob));
         clickSound.volume = 0.4;
         clickSound.preload = "auto";
+        console.log("[oneko] Click sound loaded");
       })
-      .catch(() => {});
+      .catch(e => console.error("[oneko] Error loading click sound", e));
 
-    // Click sound + reset idle
+    // Click sound + reset idle on click
     nekoEl.addEventListener("click", () => {
+      console.log("[oneko] Cat clicked");
       if (clickSound) {
         clickSound.currentTime = 0;
-        clickSound.play().catch(() => {});
+        clickSound.play().catch(e =>
+          console.error("[oneko] Error playing sound", e)
+        );
+      } else {
+        console.warn("[oneko] Click sound not ready yet");
       }
       idleAnimation = "alert";
       idleAnimationFrame = 0;
       idleTime = 0;
     });
 
-    // Cat sprite GIF (original link)
+    // Cat sprite (GIF) URL
     const nekoFile =
       "https://raw.githubusercontent.com/adryd325/oneko.js/14bab15a755d0e35cd4ae19c931d96d306f99f42/oneko.gif";
     nekoEl.style.backgroundImage = `url(${nekoFile})`;
@@ -100,14 +106,11 @@
   }
 
   let lastFrameTimestamp = 0;
-  const frameInterval = 1000 / 15; // ~15 FPS original timing
 
   function onAnimationFrame(timestamp) {
     if (!nekoEl.isConnected) return;
 
-    if (!lastFrameTimestamp) lastFrameTimestamp = timestamp;
-
-    if (timestamp - lastFrameTimestamp >= frameInterval) {
+    if (timestamp - lastFrameTimestamp > 100) {
       lastFrameTimestamp = timestamp;
       frame();
     }
@@ -117,7 +120,7 @@
 
   function setSprite(name, frame) {
     const sprite = spriteSets[name][frame % spriteSets[name].length];
-    nekoEl.style.backgroundPosition = `${sprite[0] * frameSize}px ${sprite[1] * frameSize}px`;
+    nekoEl.style.backgroundPosition = `${sprite[0] * 32}px ${sprite[1] * 32}px`;
   }
 
   function resetIdleAnimation() {
@@ -133,12 +136,19 @@
       Math.floor(Math.random() * 200) === 0 &&
       idleAnimation === null
     ) {
-      const availableIdle = ["sleeping", "scratchSelf"];
-      if (nekoPosX < frameSize) availableIdle.push("scratchWallW");
-      if (nekoPosY < frameSize) availableIdle.push("scratchWallN");
-      if (nekoPosX > window.innerWidth - frameSize) availableIdle.push("scratchWallE");
-      if (nekoPosY > window.innerHeight - frameSize) availableIdle.push("scratchWallS");
-      idleAnimation = availableIdle[Math.floor(Math.random() * availableIdle.length)];
+      const avalibleIdleAnimations = ["sleeping", "scratchSelf"];
+      if (nekoPosX < 32) avalibleIdleAnimations.push("scratchWallW");
+      if (nekoPosY < 32) avalibleIdleAnimations.push("scratchWallN");
+      if (nekoPosX > window.innerWidth - 32)
+        avalibleIdleAnimations.push("scratchWallE");
+      if (nekoPosY > window.innerHeight - 32)
+        avalibleIdleAnimations.push("scratchWallS");
+
+      idleAnimation =
+        avalibleIdleAnimations[
+          Math.floor(Math.random() * avalibleIdleAnimations.length)
+        ];
+      console.log("[oneko] Idle animation chosen:", idleAnimation);
     }
 
     switch (idleAnimation) {
@@ -147,6 +157,7 @@
         else setSprite("sleeping", Math.floor(idleAnimationFrame / 4));
         if (idleAnimationFrame > 192) resetIdleAnimation();
         break;
+
       case "scratchWallN":
       case "scratchWallS":
       case "scratchWallE":
@@ -155,6 +166,7 @@
         setSprite(idleAnimation, idleAnimationFrame);
         if (idleAnimationFrame > 9) resetIdleAnimation();
         break;
+
       default:
         setSprite("idle", 0);
         return;
@@ -193,11 +205,11 @@
     nekoPosX -= (diffX / distance) * nekoSpeed;
     nekoPosY -= (diffY / distance) * nekoSpeed;
 
-    nekoPosX = Math.min(Math.max(frameSize / 2, nekoPosX), window.innerWidth - frameSize / 2);
-    nekoPosY = Math.min(Math.max(frameSize / 2, nekoPosY), window.innerHeight - frameSize / 2);
+    nekoPosX = Math.min(Math.max(16, nekoPosX), window.innerWidth - 16);
+    nekoPosY = Math.min(Math.max(16, nekoPosY), window.innerHeight - 16);
 
-    nekoEl.style.left = `${nekoPosX - frameSize / 2}px`;
-    nekoEl.style.top = `${nekoPosY - frameSize / 2}px`;
+    nekoEl.style.left = `${nekoPosX - 16}px`;
+    nekoEl.style.top = `${nekoPosY - 16}px`;
   }
 
   init();
