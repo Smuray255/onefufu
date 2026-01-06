@@ -1,4 +1,3 @@
-// oneko.js — Vencord-ready fixed version with working click sound
 (function oneko() {
   // Prevent multiple instances
   if (document.getElementById("oneko")) return;
@@ -16,7 +15,7 @@
   let idleAnimation = null;
   let idleAnimationFrame = 0;
 
-  let clickSound = null; // Will be loaded as blob
+  let clickSound = null;
 
   const nekoSpeed = 10;
 
@@ -74,7 +73,7 @@
       })
       .catch(e => console.error("[oneko] Error loading click sound", e));
 
-    // Click sound + reset idle on click
+    // Click sound
     nekoEl.addEventListener("click", () => {
       console.log("[oneko] Cat clicked");
       if (clickSound) {
@@ -90,7 +89,7 @@
       idleTime = 0;
     });
 
-    // Cat sprite (GIF) URL
+    // Cat sprite URL
     const nekoFile =
       "https://raw.githubusercontent.com/adryd325/oneko.js/14bab15a755d0e35cd4ae19c931d96d306f99f42/oneko.gif";
     nekoEl.style.backgroundImage = `url(${nekoFile})`;
