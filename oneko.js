@@ -91,7 +91,7 @@
 
     // Cat sprite URL
     const nekoFile =
-      "https://raw.githubusercontent.com/adryd325/oneko.js/14bab15a755d0e35cd4ae19c931d96d306f99f42/oneko.gif";
+      "https://raw.githubusercontent.com/Smuray255/onefufu/refs/heads/main/oneko.gif";
     nekoEl.style.backgroundImage = `url(${nekoFile})`;
 
     document.body.appendChild(nekoEl);
